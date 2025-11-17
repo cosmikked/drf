@@ -1,0 +1,9 @@
+instance.save() - save instance to db
+
+// OUTPUT
+serializer.data - serialized JSON-ready python dictionary of model passed to serializer
+
+// INPUT
+serializer.validated_data - validated incoming data; available after .is_valid()
+
+- used for serializer.save()
