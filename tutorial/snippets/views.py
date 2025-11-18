@@ -85,9 +85,12 @@ class SnippetDetail(APIView):
 
     def get_object(self, pk):
         try:
-            return Snippet.objects.get(pk=pk)
+            snippet = Snippet.objects.get(pk=pk)
         except:
-            return Http404
+            raise Http404
+
+        self.check_object_permissions(self.request, snippet)
+        return snippet
 
     def get(self, request, pk):
         snippet = self.get_object(pk)
