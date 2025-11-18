@@ -1,10 +1,12 @@
-from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework import status, permissions
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from snippets.models import Snippet
-from snippets.serializers import SnippetSerializer
+from snippets.serializers import SnippetSerializer, UserSerializer
 from django.http import Http404
 from rest_framework.views import APIView
+from django.contrib.auth.models import User
+from snippets.permissions import IsOwnerOrReadOnly
 
 
 # Create your views here.
@@ -59,6 +61,7 @@ class SnippetList(APIView):
     """
     List all snippets, or create a new snippet.
     """
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
         snippets = Snippet.objects.all()
@@ -68,7 +71,7 @@ class SnippetList(APIView):
     def post(self, request):
         serializer = SnippetSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -76,6 +79,9 @@ class SnippetDetail(APIView):
     """
     Retrieve, update or delete a snippet instance.
     """
+
+    # ensure that authenticated requests get read-write access, and unauthenticated requests get read-only access.
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def get_object(self, pk):
         try:
@@ -101,3 +107,9 @@ class SnippetDetail(APIView):
         snippet = self.get_object(pk)
         snippet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT) 
+    
+class UserList(APIView):
+    def get(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users)
+        return Response(serializer.data)
